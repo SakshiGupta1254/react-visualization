@@ -1,127 +1,135 @@
-import React, { useEffect, useState, createContext } from "react";
+import React, { useEffect,useState } from "react";
 import { makeStyles } from "@material-ui/core/styles";
-import { LineChart, Line, CartesianGrid, XAxis, YAxis } from 'recharts';
+import {Paper} from '@material-ui/core';
+import { LineChart, Line, CartesianGrid, XAxis, YAxis,Tooltip,Legend,ResponsiveContainer } from "recharts";
 import {
   ApolloClient,
   InMemoryCache,
   ApolloProvider,
   useQuery,
-  gql
+  useMutation,
+  gql,
 } from "@apollo/client";
-
 
 const useStyles = makeStyles((theme) => ({
   PaperRoot: {
     backgroundColor: "#C1E1C1",
     width: 18,
     margin: 6,
-    padding: 5
+    padding: 5,
   },
 
-  filter: {
-    height: 35,
-    padding: 20,
-    fontWeight: 500,
-    fontSize: 'x-large'
+  Card: {
+    height: 800,
+    marginTop:30
   },
   filtersection: {
-    color: 'green',
-    fontSize: 'large',
-    float: 'right',
-    display: "inline-flex"
+    color: "green",
+    fontSize: "large",
+    float: "right",
+    display: "inline-flex",
   },
   selected: {
     backgroundColor: "#DBE6E0 !important",
-    height: 46
+    height: 46,
   },
   fade: {
-    height: 46
+    height: 46,
   },
   mobileflex: {
-    display: 'block'
+    display: "block",
   },
   rightPane: {
     flexBasis: "66%",
-    backgroundColor: '#fafafa'
+    backgroundColor: "#fafafa",
   },
-  locationnav:{
-color:'green',
-width:'100%'
+  locationnav: {
+    color: "green",
+    width: "100%",
   },
-  filterMobile:{
-float:'right',
-width:'48%'
+  tooltip:{
+fontSize:13,
+padding:12
+  },
+  filterMobile: {
+    float: "right",
+    width: "48%",
   },
   leftPane: {
-    width: '30%',
+    width: "30%",
   },
-  flexdiv: {
-    display: 'flex'
-  },
-  flexCards: {
-    display: 'flex',
-    justifyContent: "space-between",
-    margin: 20,
-
-  },
-  Chip: {
-    float:'left',
-    position: 'relative',
-    backgroundColor: 'green',
-    color: 'white'
+  box:{
+    width:300,
+    display:'inline-flex'
   }
-}))
+}));
 
 const client = new ApolloClient({
-  uri: 'https://react.eogresources.com/graphql',
+  uri: "https://react.eogresources.com/graphql",
   cache: new InMemoryCache(),
 });
-const METRIC_DETAILS = gql`
-  query($metricType:String!) {
-    getMultipleMeasurements(input:{
-        metricName: $metricType
-    }){metric
-        measurements {
-            at
-            metric
-            unit
-            value
-        }
 
+export default function Chart(props) {
+  const classes = useStyles();
+  const { metricType,timestamp } = props;
+  const [tempratures,setTempratures] = useState();
+
+  const METRIC_DETAILS = gql`
+    query($details:MeasurementQuery!) {
+      getMeasurements(input: $details) {
+        
+          at
+          metric
+          unit
+          value
+        
+      }
     }
+  `;
+  const { loading, error, data } = useQuery(METRIC_DETAILS, {
+    variables: { details:{metricName : metricType,
+    after: timestamp} },
+  });
+  const renderCustomAxisTick = ({ x, y, payload }) => {
+    return (
+      <div>{new Date().toISOString()}</div>
+    );
+  };
+  function CustomTooltip({ payload, label, active }) {
+
+    if (active &&payload) {
+      return (
+        <Paper  className={classes.tooltip}>
+          <p className="label">{`${payload[0]?.payload.metric} : ${payload[0].value}`}</p>
+         
+          <p className="desc">{new  Date(payload[0]?.payload.at).toString()}</p>
+        </Paper>
+      );
+    }
+  
+    return null;
   }
-`;
- function Chart(props) {
-     const {metricType} = props;
-console.log(metricType,props);
-const { loading, error, data } = useQuery(METRIC_DETAILS,{variables:{metricType},});
-const testdata = [{name: 'Page A', uv: 400, pv: 2400, amt: 2400}];
-const handleFilterLocation = () =>{
-
-}
-
   if (loading) return <p>Loading...</p>;
-  if (error) return <p>  <LineChart width={600} height={300} data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-  <Line type="monotone" dataKey="uv" stroke="#8884d8" />
-  <CartesianGrid stroke="#ccc" strokeDasharray="5 5" />
-  <XAxis dataKey="name" />
-  <YAxis />
-</LineChart></p>;
+  if (error)
+    return (
+      <p>Error :(</p>
+    );
   return (
-  <div>
- <LineChart width={600} height={300} data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-    <Line type="monotone" dataKey="uv" stroke="#8884d8" />
-    <CartesianGrid stroke="#ccc" strokeDasharray="5 5" />
-    <XAxis dataKey="name" />
-    <YAxis />
-  </LineChart>
-  </div>
+    <div className={classes.Card}>
+     <ResponsiveContainer>
+ <LineChart  width={800}
+          height={400} data={data?.getMeasurements}
+  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+  
+  <Line type="monotone" dataKey="value" stroke="#8884d8" />
+  <XAxis />
+  <YAxis unit={data?.getMeasurements?.[0]?.unit}/>
+  <Tooltip content={<CustomTooltip />}/>
+  <Legend />
 
-
-  )
+</LineChart>
+</ResponsiveContainer>
+    </div>
+  );
 }
-export default(props) => (
-  <ApolloProvider client={client}>
-    <Chart />
-  </ApolloProvider>
-);
+

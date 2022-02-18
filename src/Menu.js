@@ -79,6 +79,7 @@ const client = new ApolloClient({
 const EXCHANGE_RATES = gql`
   query {
     getMetrics
+    heartBeat
   }
 `;
  function Menu() {
@@ -91,7 +92,7 @@ const handleFilterLocation = () =>{
   if (error) return <p>Error :(</p>;
   return (
   <div>
-    <Location locationData={data.getMetrics} handleFilterLocation={handleFilterLocation}/>
+    <Location locationData={data.getMetrics} timestamp={data.heartBeat} handleFilterLocation={handleFilterLocation}/>
   </div>
 
 

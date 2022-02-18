@@ -3,7 +3,8 @@ import {Paper,List,ListItemText,ListItem,Divider, Typography,Select,OutlinedInpu
   Chip,MenuItem,Box} from '@material-ui/core';
 import { ChevronRight, ExpandMore, Close as CloseIcon } from "@material-ui/icons";
 import { makeStyles } from "@material-ui/core/styles";
-import Chart from "./Chart"
+import MetricInfo from './MetricInfo';
+import MetricChart from "./Chart"
 const useStyles = makeStyles((theme) => ({
     PaperRoot: {
       backgroundColor: "#C1E1C1",
@@ -19,7 +20,10 @@ const useStyles = makeStyles((theme) => ({
         fontSize:'x-large'
     },
     box:{
-      width: 320
+      float:'right',
+      width: 370,
+      height:50,
+      margin:5
     },
     filtersection:{
         color:'green',
@@ -51,10 +55,11 @@ const useStyles = makeStyles((theme) => ({
          
       },
       Chip:{
-        left:'15%',
         position:'relative',
-        backgroundColor:'green',
-        color:'white'
+        color:'black',
+        borderRadius:0,
+        margin: 2,
+        height: 25
       },
       FadeChip:{
         left:'35%',
@@ -74,23 +79,20 @@ const useStyles = makeStyles((theme) => ({
         boxShadow:"0 10px 16px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19) !important"
       }
     })) 
-    
-    function ListItemLink(props) {
-        return <ListItem button component="a" {...props} />;
-      }
      
 
 export default function Location(props) {
   const [Temp, setTemp] = useState([]);
-    const{locationData, selected, hoverActions, filterLocation, handleFilterLocation} =props;
+    const{locationData,timestamp, selected, hoverActions, filterLocation, handleFilterLocation} =props;
     const classes = useStyles();
     const handleChange = (event) => {
       setTemp(event.target.value);
       
     };
-    useEffect(()=>{
-//console.log(Temp)
-    },[Temp])
+    const handleDelete =() =>{
+      debugger
+    }
+   
   return(<><div className={classes.filter}>
    <Select
           labelId="demo-multiple-chip-label"
@@ -103,7 +105,7 @@ export default function Location(props) {
           renderValue={(selected) => (
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
               {selected.map((value) => (
-                <Chip key={value} label={value} />
+                <Chip className={classes.Chip} onDelete={handleChange} key={value} label={value} />
               ))}
             </Box>
           )}
@@ -118,7 +120,15 @@ export default function Location(props) {
             </MenuItem>
           ))}
         </Select>
-       { Temp.length>0? <Chart metricType={Temp}/>:""}
+        
+        {Temp&& Temp.map(i=> {
+        return(<div className={classes.box}>
+          <MetricInfo name={i}/>
+          </div>)
+      }
+
+      )}
+       { Temp.length>0? Temp.map(i=>(<MetricChart timestamp={timestamp} metricType={i}/>)):""}
   </div>
         </>)
 }  

@@ -3,11 +3,9 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
 import store  from './app/store';
-import { PostAction } from './Actions';
 import { Provider } from 'react-redux';
 import * as serviceWorker from './serviceWorker';
-window.store = store;
-window.PostAction = PostAction ;
+
 
 ReactDOM.render(
   <React.StrictMode>
