@@ -1,7 +1,8 @@
 import React,{useEffect, useState} from 'react' ;
-import {Paper,List,ListItemText,ListItem,Divider, Typography,Select,OutlinedInput,
-  Chip,MenuItem,Box} from '@material-ui/core';
+import {FormControl,Select,OutlinedInput,
+  Chip,MenuItem,Box,InputLabel} from '@material-ui/core';
 import { ChevronRight, ExpandMore, Close as CloseIcon } from "@material-ui/icons";
+import { LineChart, Line, CartesianGrid,Label, XAxis, YAxis,Tooltip,Legend,ResponsiveContainer } from "recharts";
 import { makeStyles } from "@material-ui/core/styles";
 import MetricInfo from './MetricInfo';
 import MetricChart from "./Chart"
@@ -23,7 +24,8 @@ const useStyles = makeStyles((theme) => ({
       float:'right',
       width: 370,
       height:50,
-      margin:5
+      margin:5,
+      color:'red'
     },
     filtersection:{
         color:'green',
@@ -83,6 +85,7 @@ const useStyles = makeStyles((theme) => ({
 
 export default function Location(props) {
   const [Temp, setTemp] = useState([]);
+  const [metriclist,setmetricList]= useState([]);
     const{locationData,timestamp, selected, hoverActions, filterLocation, handleFilterLocation} =props;
     const classes = useStyles();
     const handleChange = (event) => {
@@ -90,18 +93,29 @@ export default function Location(props) {
       
     };
     const handleDelete =() =>{
-      debugger
     }
-   
+    useEffect(() => {
+      let list={};
+      Temp.forEach((i,key)=>{
+        list[key]={metricName: i, after:timestamp
+        }
+      })
+      setmetricList(prevState => {
+        return Object.assign([], prevState, list)
+      })
+
+    }, [Temp]);
   return(<><div className={classes.filter}>
+    <FormControl  className={classes.box} sx={{ width: 600 }}>
+      <InputLabel id="temp-form">Select Here</InputLabel>
    <Select
-          labelId="demo-multiple-chip-label"
-          id="demo-multiple-chip"
+          labelId="temp-input"
+          id="temp-input"
           multiple
-          label="select"
+          label="Select Input"
           value={Temp}
           onChange={handleChange}
-          input={<OutlinedInput className={classes.box} label="Select" />}
+          input={<OutlinedInput className={classes.box} label="Select Input" />}
           renderValue={(selected) => (
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
               {selected.map((value) => (
@@ -120,7 +134,7 @@ export default function Location(props) {
             </MenuItem>
           ))}
         </Select>
-        
+        </FormControl>
         {Temp&& Temp.map(i=> {
         return(<div className={classes.box}>
           <MetricInfo name={i}/>
@@ -128,7 +142,8 @@ export default function Location(props) {
       }
 
       )}
-       { Temp.length>0? Temp.map(i=>(<MetricChart timestamp={timestamp} metricType={i}/>)):""}
+     {Temp && metriclist.length>0 &&<MetricChart metriclist={metriclist} timestamp={timestamp} />}
+
   </div>
         </>)
 }  

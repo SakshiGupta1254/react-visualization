@@ -1,7 +1,8 @@
 import React, { useEffect,useState } from "react";
 import { makeStyles } from "@material-ui/core/styles";
 import {Paper} from '@material-ui/core';
-import { LineChart, Line, CartesianGrid, XAxis, YAxis,Tooltip,Legend,ResponsiveContainer } from "recharts";
+import Chart from 'react-apexcharts'
+import { LineChart, Line, CartesianGrid,Label, XAxis, YAxis,Tooltip,Legend,ResponsiveContainer } from "recharts";
 import {
   ApolloClient,
   InMemoryCache,
@@ -63,32 +64,162 @@ padding:12
     display:'inline-flex'
   }
 }));
+const testdata = {
+          
+  series: [{
+    name: 'Income',
+    type: 'column',
+    data: [1.4, 2, 2.5, 1.5, 2.5, 2.8, 3.8, 4.6]
+  }, {
+    name: 'Cashflow',
+    type: 'column',
+    data: [1.1, 3, 3.1, 4, 4.1, 4.9, 6.5, 8.5]
+  }, {
+    name: 'Revenue',
+    type: 'line',
+    data: [20, 29, 37, 36, 44, 45, 50, 58]
+  }],
+  options: {
+    chart: {
+      height: 350,
+      type: 'line',
+      stacked: false
+    },
+    dataLabels: {
+      enabled: false
+    },
+    stroke: {
+      width: [1, 1, 4]
+    },
+    title: {
+      text: 'XYZ - Stock Analysis (2009 - 2016)',
+      align: 'left',
+      offsetX: 110
+    },
+    xaxis: {
+      categories: [2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016],
+    },
+    yaxis: [
+      {
+        axisTicks: {
+          show: true,
+        },
+        axisBorder: {
+          show: true,
+          color: '#008FFB'
+        },
+        labels: {
+          style: {
+            colors: '#008FFB',
+          }
+        },
+        title: {
+          text: "Income (thousand crores)",
+          style: {
+            color: '#008FFB',
+          }
+        },
+        tooltip: {
+          enabled: true
+        }
+      },
+      {
+        seriesName: 'Income',
+        opposite: true,
+        axisTicks: {
+          show: true,
+        },
+        axisBorder: {
+          show: true,
+          color: '#00E396'
+        },
+        labels: {
+          style: {
+            colors: '#00E396',
+          }
+        },
+        title: {
+          text: "Operating Cashflow (thousand crores)",
+          style: {
+            color: '#00E396',
+          }
+        },
+      },
+      {
+        seriesName: 'Revenue',
+        opposite: true,
+        axisTicks: {
+          show: true,
+        },
+        axisBorder: {
+          show: true,
+          color: '#FEB019'
+        },
+        labels: {
+          style: {
+            colors: '#FEB019',
+          },
+        },
+        title: {
+          text: "Revenue (thousand crores)",
+          style: {
+            color: '#FEB019',
+          }
+        }
+      },
+    ],
+    tooltip: {
+      fixed: {
+        enabled: true,
+        position: 'topLeft', // topRight, topLeft, bottomRight, bottomLeft
+        offsetY: 30,
+        offsetX: 60
+      },
+    },
+    legend: {
+      horizontalAlign: 'left',
+      offsetX: 40
+    }
+  },
+}
 
 const client = new ApolloClient({
   uri: "https://react.eogresources.com/graphql",
   cache: new InMemoryCache(),
 });
 
-export default function Chart(props) {
+export default function MetricChart(props) {
   const classes = useStyles();
-  const { metricType,timestamp } = props;
+  const { metricType,timestamp,metriclist } = props;
   const [tempratures,setTempratures] = useState();
 
-  const METRIC_DETAILS = gql`
-    query($details:MeasurementQuery!) {
-      getMeasurements(input: $details) {
+  // const METRIC_DETAILS = gql`
+  //   query($details:MeasurementQuery!) {
+  //     getMeasurements(input: $details) {
         
-          at
-          metric
+  //         at
+  //         metric
+  //         unit
+  //         value
+        
+  //     }
+  //   }
+  // `;
+    const METRIC_DETAILS = gql`
+    query($metriclist:[MeasurementQuery]!) {
+      getMultipleMeasurements(input: $metriclist) {
+        metric
+        measurements{
+          metric,
+          at,
+          value,
           unit
-          value
-        
-      }
+        }}
     }
   `;
   const { loading, error, data } = useQuery(METRIC_DETAILS, {
     variables: { details:{metricName : metricType,
-    after: timestamp} },
+    after: timestamp},metriclist },
   });
   const renderCustomAxisTick = ({ x, y, payload }) => {
     return (
@@ -96,7 +227,6 @@ export default function Chart(props) {
     );
   };
   function CustomTooltip({ payload, label, active }) {
-
     if (active &&payload) {
       return (
         <Paper  className={classes.tooltip}>
@@ -109,6 +239,15 @@ export default function Chart(props) {
   
     return null;
   }
+  const CustomizedAxisTick = ({x, y, stroke, payload})=> {
+    return (
+      <g transform={`translate(${x},${y})`}>
+        <text x={0} y={0} dy={16} textAnchor="end" fontSize="12"  fill="#666">
+          {`${new Date(payload.value).getHours()}:${new Date(payload.value).getMinutes()}`}
+        </text>
+      </g>
+    );
+  }
   if (loading) return <p>Loading...</p>;
   if (error)
     return (
@@ -116,14 +255,20 @@ export default function Chart(props) {
     );
   return (
     <div className={classes.Card}>
+     
      <ResponsiveContainer>
  <LineChart  width={800}
-          height={400} data={data?.getMeasurements}
+          height={400} 
   margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-  
-  <Line type="monotone" dataKey="value" stroke="#8884d8" />
-  <XAxis />
-  <YAxis unit={data?.getMeasurements?.[0]?.unit}/>
+    {data.getMultipleMeasurements.map((i,key)=>{
+      return(<>
+      <Line key={key}  data={i?.measurements} dataKey="value" stroke={key% 2 == 0?'red':'blue'} />
+      <YAxis yAxisId={key} label={i?.measurements[0].unit} dataKey="value" unit={i?.measurements[0].unit} tickCount={50} tick={{ fontSize: 10 }}/>
+      
+      </>)
+    })}
+   
+  <XAxis dataKey="at" tick={<CustomizedAxisTick />} />
   <Tooltip content={<CustomTooltip />}/>
   <Legend />
 
